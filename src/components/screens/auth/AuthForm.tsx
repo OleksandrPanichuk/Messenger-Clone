@@ -6,7 +6,7 @@ import { BsGithub, BsGoogle } from 'react-icons/bs'
 
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
-import AuthSocialButton from '@/components/AuthSocialButton'
+import AuthSocialButton from '@/components/screens/auth/AuthSocialButton'
 import { signIn, SignInResponse } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'

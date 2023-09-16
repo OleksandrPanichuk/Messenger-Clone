@@ -11,6 +11,8 @@ import { toast } from 'react-hot-toast'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/modals/Modal'
 import Input from '@/components/ui/Input'
+import { UploadButton } from '@/components/uploadthing'
+import { useMutation } from '@tanstack/react-query'
 
 interface SettingsModalProps {
 	isOpen?: boolean
@@ -21,16 +23,16 @@ interface SettingsModalProps {
 const SettingsModal: React.FC<SettingsModalProps> = ({
 	isOpen,
 	onClose,
-	currentUser = {}
+	currentUser
 }) => {
 	const router = useRouter()
-	const [isLoading, setIsLoading] = useState(false)
 
 	const {
 		register,
 		handleSubmit,
 		setValue,
 		watch,
+		getValues,
 		formState: { errors }
 	} = useForm<FieldValues>({
 		defaultValues: {
@@ -41,27 +43,32 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
 	const image = watch('image')
 
-	const handleUpload = (result: any) => {
-		setValue('image', result.info.secure_url, {
-			shouldValidate: true
-		})
+	const {mutate: updateUser, isLoading} = useMutation({
+		mutationFn: async (data: FieldValues) => {
+			return await axios.post('/api/settings', data)
+		},
+		onSuccess: () => {
+			router.refresh(),
+			onClose()
+		},
+		onError: () => {
+			toast.error('Something went wrong!')
+		}
+	})
+
+	const onSubmit: SubmitHandler<FieldValues> = async (data) => {
+		updateUser(data)
 	}
 
-	const onSubmit: SubmitHandler<FieldValues> = (data) => {
-		setIsLoading(true)
-
-		axios
-			.post('/api/settings', data)
-			.then(() => {
-				router.refresh()
-				onClose()
-			})
-			.catch(() => toast.error('Something went wrong!'))
-			.finally(() => setIsLoading(false))
+	const onModalClose = async () => {
+		setValue('image', currentUser?.image, {
+			shouldValidate: true
+		})
+		onClose()
 	}
 
 	return (
-		<Modal isOpen={isOpen} onClose={onClose}>
+		<Modal isOpen={isOpen} onClose={onModalClose}>
 			<form onSubmit={handleSubmit(onSubmit)}>
 				<div className="space-y-12">
 					<div className="border-b border-gray-900/10 pb-12">
@@ -107,19 +114,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 										height="48"
 										className="rounded-full"
 										src={
-											image || currentUser?.image || '/images/placeholder.jpg'
+											image?.url ??
+											currentUser?.image ??
+											'/placeholder.jpg'
 										}
 										alt="Avatar"
 									/>
-									<CldUploadButton
-										options={{ maxFiles: 1 }}
-										onUpload={handleUpload}
-										uploadPreset="pgc9ehd5"
-									>
-										<Button disabled={isLoading} secondary type="button">
-											Change
-										</Button>
-									</CldUploadButton>
+
+									<div className='relative'>
+										<Button type='button' disabled={isLoading} secondary>Change</Button>
+										<UploadButton
+											endpoint={'imageUploader'}
+											className='absolute w-full h-full let-0 top-0 opacity-0 z-20 upload-button'
+											onClientUploadComplete={async (res) => {
+												if (res) {
+													setValue('image', res[0].url, {
+														shouldValidate: true
+													})
+												}
+											}}
+										/>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -135,7 +150,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             gap-x-6
           "
 				>
-					<Button disabled={isLoading} secondary onClick={onClose}>
+					<Button disabled={isLoading} secondary onClick={onModalClose}>
 						Cancel
 					</Button>
 					<Button disabled={isLoading} type="submit">

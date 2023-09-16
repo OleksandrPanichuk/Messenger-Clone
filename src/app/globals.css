@@ -6,3 +6,8 @@
 html, body, :root {
     height:100%
 }
+
+
+.upload-button label {
+    @apply w-full h-full absolute top-0 right-0;
+}

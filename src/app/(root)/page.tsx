@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import AuthForm from '@/components/AuthForm'
+import AuthForm from '@/components/screens/auth/AuthForm'
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 
